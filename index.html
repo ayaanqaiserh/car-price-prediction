@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Car Price Prediction</title>
+</head>
+<body>
+  <h1>Car Price Prediction</h1>
+  <p>Enter the car details in either form and click its button.</p>
+
+  <h2>Predict selling price</h2>
+  <form id="regression-form">
+    <label>Year: <input name="Year" type="number" value="2014" required></label><br>
+    <label>Present price: <input name="Present_Price" type="number" step="any" value="5.59" required></label><br>
+    <label>Kilometers driven: <input name="Kms_Driven" type="number" value="27000" required></label><br>
+    <label>Fuel type: <input name="Fuel_Type" value="Petrol" required></label><br>
+    <label>Seller type: <input name="Seller_Type" value="Dealer" required></label><br>
+    <label>Transmission: <input name="Transmission" value="Manual" required></label><br>
+    <label>Previous owners: <input name="Owner" type="number" value="0" required></label><br>
+    <button type="submit">Predict selling price</button>
+  </form>
+  <p id="regression-result"></p>
+
+  <h2>Predict price category</h2>
+  <form id="classification-form">
+    <label>Year: <input name="Year" type="number" value="2014" required></label><br>
+    <label>Present price: <input name="Present_Price" type="number" step="any" value="5.59" required></label><br>
+    <label>Kilometers driven: <input name="Kms_Driven" type="number" value="27000" required></label><br>
+    <label>Fuel type: <input name="Fuel_Type" value="Petrol" required></label><br>
+    <label>Seller type: <input name="Seller_Type" value="Dealer" required></label><br>
+    <label>Transmission: <input name="Transmission" value="Manual" required></label><br>
+    <label>Previous owners: <input name="Owner" type="number" value="0" required></label><br>
+    <button type="submit">Predict price category</button>
+  </form>
+  <p id="classification-result"></p>
+
+  <script>
+    function formDataToCar(form) {
+      const values = new FormData(form);
+      return {
+        Year: Number(values.get("Year")),
+        Present_Price: Number(values.get("Present_Price")),
+        Kms_Driven: Number(values.get("Kms_Driven")),
+        Fuel_Type: values.get("Fuel_Type"),
+        Seller_Type: values.get("Seller_Type"),
+        Transmission: values.get("Transmission"),
+        Owner: Number(values.get("Owner"))
+      };
+    }
+
+    async function sendPrediction(formId, endpoint, resultId, resultKey, label) {
+      const form = document.getElementById(formId);
+      const result = document.getElementById(resultId);
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        result.textContent = "Calculating...";
+
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formDataToCar(form))
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.detail || "The request failed.");
+          }
+
+          result.textContent = label + data[resultKey];
+        } catch (error) {
+          result.textContent = "Error: " + error.message;
+        }
+      });
+    }
+
+    sendPrediction(
+      "regression-form",
+      "/predict/regression",
+      "regression-result",
+      "predicted_selling_price",
+      "Predicted selling price: "
+    );
+
+    sendPrediction(
+      "classification-form",
+      "/predict/classification",
+      "classification-result",
+      "predicted_price_category",
+      "Predicted price category: "
+    );
+  </script>
+</body>
+</html>
