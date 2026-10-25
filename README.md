@@ -42,3 +42,4 @@ Open `http://127.0.0.1:8000` for the webpage or `http://127.0.0.1:8000/docs` for
 
   
 - The classification categories are Low (up to 2), Medium (over 2 to 5), High (over 5 to 10), and Very High (over 10), in the dataset's price units.
+pdate README project overview and run guide
