@@ -40,5 +40,5 @@ Open `http://127.0.0.1:8000` for the webpage or `http://127.0.0.1:8000/docs` for
 - Regression R²: `0.963`
 - Classification accuracy: `0.820`
 
-- Complete README setup and run instructions
+  
 - The classification categories are Low (up to 2), Medium (over 2 to 5), High (over 5 to 10), and Very High (over 10), in the dataset's price units.
