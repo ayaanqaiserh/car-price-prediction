@@ -1,13 +1,23 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from joblib import load
 import pandas as pd
-from fastapi.responses import FileResponse
 
 app = FastAPI(title="Car Price Prediction API")
 
-regression_model = load("regression_model.joblib")
-classification_model = load("classification_model.joblib")
+regression_models = {
+    "linear_regression": load("models/regression_linear_regression.joblib"),
+    "decision_tree": load("models/regression_decision_tree.joblib"),
+    "random_forest": load("models/regression_random_forest.joblib"),
+    "svm": load("models/regression_svm.joblib"),
+}
+classification_models = {
+    "decision_tree": load("models/classification_decision_tree.joblib"),
+    "random_forest": load("models/classification_random_forest.joblib"),
+    "svm": load("models/classification_svm.joblib"),
+    "naive_bayes": load("models/classification_naive_bayes.joblib"),
+}
 
 
 class CarDetails(BaseModel):
@@ -18,6 +28,7 @@ class CarDetails(BaseModel):
     Seller_Type: str
     Transmission: str
     Owner: int
+    algorithm: str = "random_forest"
 
 
 def make_input(car: CarDetails):
@@ -31,16 +42,28 @@ def make_input(car: CarDetails):
         "Owner": car.Owner,
     }])
 
+
 @app.post("/predict/regression")
 def predict_regression(car: CarDetails):
-    price = regression_model.predict(make_input(car))[0]
-    return {"predicted_selling_price": round(float(price), 2)}
+    if car.algorithm not in regression_models:
+        raise HTTPException(status_code=400, detail="Unknown algorithm for regression.")
+    model = regression_models[car.algorithm]
+    price = model.predict(make_input(car))[0]
+    return {"predicted_selling_price": round(float(price), 2),
+            "algorithm": car.algorithm}
 
 
 @app.post("/predict/classification")
 def predict_classification(car: CarDetails):
-    category = classification_model.predict(make_input(car))[0]
-    return {"predicted_price_category": str(category)}
+    if car.algorithm not in classification_models:
+        raise HTTPException(status_code=400, detail="Unknown algorithm for classification.")
+    model = classification_models[car.algorithm]
+    category = model.predict(make_input(car))[0]
+    return {"predicted_price_category": str(category),
+            "algorithm": car.algorithm}
+
+
 @app.get("/")
 def home():
     return FileResponse("index.html")
+

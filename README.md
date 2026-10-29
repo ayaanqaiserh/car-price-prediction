@@ -1,85 +1,99 @@
 # Car Price Prediction
 
-## Project Overview
+A small machine learning web app that predicts a used car's selling price (regression) and its price category (classification). It uses the CarDekho car dataset (car data.csv), scikit-learn for the models, FastAPI for the backend, and a plain HTML/JavaScript page for the frontend.
 
-Car Price Prediction is a full-stack machine learning application. It predicts a vehicle's selling price and classifies the price as Low, Medium, High, or Very High using vehicle details.
+## What it predicts
 
-## Technologies Used
+- *Selling price:* a number (regression).
+- *Price category:* Low (up to 2), Medium (2 to 5), High (5 to 10) or Very High (over 10), using the same price units as the dataset.
 
-- Python
-- Pandas
-- Scikit-learn
-- FastAPI
-- HTML and JavaScript
-- Joblib
+## Algorithms used
 
-## Machine Learning Models
+| Algorithm | Regression | Classification |
+|---|---|---|
+| Linear Regression | Yes | - |
+| Decision Tree | Yes | Yes |
+| Random Forest | Yes | Yes |
+| SVM (SVR / SVC) | Yes | Yes |
+| Naive Bayes | - | Yes |
 
-- **Regression:** Random Forest Regressor predicts the selling-price number.
-- **Classification:** Random Forest Classifier predicts the price category.
-- Text details such as fuel type are converted into a format the models can use with one-hot encoding.
+Naive Bayes is only used for classification, because it is a probability classifier and does not predict numbers.
 
-### Model Evaluation
+## Results
 
-The models were evaluated using a held-out test set.
+Data split: 80% training (240 cars), 20% testing (61 cars), stratified by price category.
 
-| Metric | Result |
-|---|---:|
-| Regression R² Score | 0.963 |
-| Classification Accuracy | 82.0% |
+*Regression (R²)*
 
-The price categories use the dataset's price units: Low is up to 2, Medium is over 2 and up to 5, High is over 5 and up to 10, and Very High is over 10.
+| Model | R² |
+|---|---|
+| Linear Regression | 0.871 |
+| Decision Tree | 0.880 |
+| Random Forest | 0.921 |
+| SVR | 0.941 |
 
-## Project Structure
+*Classification (accuracy)*
 
-The main project files are in the project folder:
+| Model | Accuracy |
+|---|---|
+| Naive Bayes | 0.770 |
+| Decision Tree | 0.836 |
+| Random Forest | 0.852 |
+| SVM | 0.869 |
 
-- `app.py` — FastAPI application and prediction endpoints
-- `train_model.py` — prepares the data, trains the models, prints the scores, and saves the models
-- `index.html` — webpage with separate regression and classification forms
-- `car data.csv` — dataset used by the training script
-- `regression_model.joblib` — saved regression model and preprocessing steps
-- `classification_model.joblib` — saved classification model and preprocessing steps
-- `README.md` — project information and run instructions
+The test set is small (61 cars, only 6 in the "Very High" category), so the differences between the top models are small and can change with a different split.
 
-The repository also contains other downloaded CSV files. The training script uses `car data.csv`.
+## Project files
 
-## How to Run the Project on macOS
+- car data.csv: the dataset.
+- train_model.py: the first version, trains Random Forest only.
+- compare-models.py: trains and compares all models, prints the scores, and saves them in the models folder.
+- app.py: the FastAPI backend.
+- index.html: the frontend page.
+- requirements.txt: the Python libraries needed.
 
-Open a terminal in the project folder.
+## How to run it
 
-### 1. Create and activate a virtual environment
+1. Open a terminal in the project folder.
+2. Create and activate a virtual environment:
+   
+   python3 -m venv .venv
+   source .venv/bin/activate
+   
+3. Install the libraries:
+   
+   pip install -r requirements.txt
+   
+4. Train and save the models (this creates the models folder):
+   
+   python compare-models.py
+   
+5. Start the server:
+   
+   uvicorn app:app --reload
+   
+6. Open http://127.0.0.1:8000 in your browser.
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
+Always start the server from inside the project folder, or the model files will not be found.
 
-### 2. Install the required packages
+## API endpoints
 
-```bash
-python -m pip install pandas scikit-learn fastapi uvicorn joblib
-```
+Both endpoints accept a POST request with JSON like this:
 
-### 3. Train and save the models
+json
+{
+  "Year": 2014,
+  "Present_Price": 5.59,
+  "Kms_Driven": 27000,
+  "Fuel_Type": "Petrol",
+  "Seller_Type": "Dealer",
+  "Transmission": "Manual",
+  "Owner": 0,
+  "algorithm": "random_forest"
+}
 
-Make sure `car data.csv` is in the project folder, then run:
 
-```bash
-python train_model.py
-```
+- POST /predict/regression returns {"predicted_selling_price": ..., "algorithm": ...}
+- POST /predict/classification returns {"predicted_price_category": ..., "algorithm": ...}
 
-This prints the evaluation scores and creates the two `.joblib` model files.
-
-### 4. Start the application
-
-```bash
-uvicorn app:app --reload
-```
-
-Keep the terminal open while using the app. Open `http://127.0.0.1:8000` for the webpage or `http://127.0.0.1:8000/docs` to view and try the API. The GitHub repository stores the project files; the app runs locally using these steps.
-
-## API Endpoints
-
-- `POST /predict/regression` — predicts a selling price.
-- `POST /predict/classification` — predicts a price category.
+Valid algorithm values: linear_regression, decision_tree, random_forest, svm for regression, and decision_tree, random_forest, svm, naive_bayes for classification. If algorithm is left out, random_forest is used.

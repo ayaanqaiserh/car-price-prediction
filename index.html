@@ -7,16 +7,36 @@
 </head>
 <body>
   <h1>Car Price Prediction</h1>
-  <p>Enter the car details in either form and click its button.</p>
+  <p>Pick an algorithm, enter the car details, and click the button.</p>
 
   <h2>Predict selling price</h2>
   <form id="regression-form">
+    <label>Algorithm:
+      <select name="algorithm">
+        <option value="random_forest">Random Forest</option>
+        <option value="linear_regression">Linear Regression</option>
+        <option value="decision_tree">Decision Tree</option>
+        <option value="svm">SVM</option>
+      </select>
+    </label><br>
     <label>Year: <input name="Year" type="number" value="2014" required></label><br>
     <label>Present price: <input name="Present_Price" type="number" step="any" value="5.59" required></label><br>
     <label>Kilometers driven: <input name="Kms_Driven" type="number" value="27000" required></label><br>
-    <label>Fuel type: <input name="Fuel_Type" value="Petrol" required></label><br>
-    <label>Seller type: <input name="Seller_Type" value="Dealer" required></label><br>
-    <label>Transmission: <input name="Transmission" value="Manual" required></label><br>
+    <label>Fuel type:
+      <select name="Fuel_Type">
+        <option>Petrol</option><option>Diesel</option><option>CNG</option>
+      </select>
+    </label><br>
+    <label>Seller type:
+      <select name="Seller_Type">
+        <option>Dealer</option><option>Individual</option>
+      </select>
+    </label><br>
+    <label>Transmission:
+      <select name="Transmission">
+        <option>Manual</option><option>Automatic</option>
+      </select>
+    </label><br>
     <label>Previous owners: <input name="Owner" type="number" value="0" required></label><br>
     <button type="submit">Predict selling price</button>
   </form>
@@ -24,12 +44,32 @@
 
   <h2>Predict price category</h2>
   <form id="classification-form">
+    <label>Algorithm:
+      <select name="algorithm">
+        <option value="random_forest">Random Forest</option>
+        <option value="decision_tree">Decision Tree</option>
+        <option value="svm">SVM</option>
+        <option value="naive_bayes">Naive Bayes</option>
+      </select>
+    </label><br>
     <label>Year: <input name="Year" type="number" value="2014" required></label><br>
     <label>Present price: <input name="Present_Price" type="number" step="any" value="5.59" required></label><br>
     <label>Kilometers driven: <input name="Kms_Driven" type="number" value="27000" required></label><br>
-    <label>Fuel type: <input name="Fuel_Type" value="Petrol" required></label><br>
-    <label>Seller type: <input name="Seller_Type" value="Dealer" required></label><br>
-    <label>Transmission: <input name="Transmission" value="Manual" required></label><br>
+    <label>Fuel type:
+      <select name="Fuel_Type">
+        <option>Petrol</option><option>Diesel</option><option>CNG</option>
+      </select>
+    </label><br>
+    <label>Seller type:
+      <select name="Seller_Type">
+        <option>Dealer</option><option>Individual</option>
+      </select>
+    </label><br>
+    <label>Transmission:
+      <select name="Transmission">
+        <option>Manual</option><option>Automatic</option>
+      </select>
+    </label><br>
     <label>Previous owners: <input name="Owner" type="number" value="0" required></label><br>
     <button type="submit">Predict price category</button>
   </form>
@@ -45,11 +85,12 @@
         Fuel_Type: values.get("Fuel_Type"),
         Seller_Type: values.get("Seller_Type"),
         Transmission: values.get("Transmission"),
-        Owner: Number(values.get("Owner"))
+        Owner: Number(values.get("Owner")),
+        algorithm: values.get("algorithm")
       };
     }
 
-    async function sendPrediction(formId, endpoint, resultId, resultKey, label) {
+    function sendPrediction(formId, endpoint, resultId, resultKey, label) {
       const form = document.getElementById(formId);
       const result = document.getElementById(resultId);
 
@@ -66,31 +107,24 @@
 
           const data = await response.json();
           if (!response.ok) {
-            throw new Error(data.detail || "The request failed.");
+            const message = typeof data.detail === "string"
+              ? data.detail
+              : "Please check the values you entered.";
+            throw new Error(message);
           }
 
-          result.textContent = label + data[resultKey];
+          result.textContent = label + data[resultKey] + " (" + data.algorithm + ")";
         } catch (error) {
           result.textContent = "Error: " + error.message;
         }
       });
     }
 
-    sendPrediction(
-      "regression-form",
-      "/predict/regression",
-      "regression-result",
-      "predicted_selling_price",
-      "Predicted selling price: "
-    );
+    sendPrediction("regression-form", "/predict/regression",
+      "regression-result", "predicted_selling_price", "Predicted selling price: ");
 
-    sendPrediction(
-      "classification-form",
-      "/predict/classification",
-      "classification-result",
-      "predicted_price_category",
-      "Predicted price category: "
-    );
+    sendPrediction("classification-form", "/predict/classification",
+      "classification-result", "predicted_price_category", "Predicted price category: ");
   </script>
 </body>
 </html>
