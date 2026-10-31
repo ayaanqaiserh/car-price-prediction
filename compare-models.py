@@ -156,3 +156,52 @@ for name, model in classification_models.items():
     dump(model, f"models/classification_{name}.joblib")
 
 print("Saved", len(regression_models) + len(classification_models), "models in the models folder")
+
+simple_lin = LinearRegression()
+simple_lin.fit(X_train[["Present_Price"]], y_price_train)
+simple_pred = simple_lin.predict(X_test[["Present_Price"]])
+print("Simple Linear Regression R2:", round(r2_score(y_price_test, simple_pred), 3))
+
+from sklearn.model_selection import cross_val_score
+
+def svm_cv_score(kernel, C, gamma):
+    model = Pipeline([
+        ("prep", make_scaled_preprocessor()),
+        ("model", SVC(kernel=kernel, C=C, gamma=gamma)),
+    ])
+    scores = cross_val_score(model, X_train, y_cat_train, cv=5)
+    return scores.mean()
+
+print("--- SVM kernel comparison (C=1) ---")
+for kernel in ["linear", "rbf"]:
+    print(kernel, round(svm_cv_score(kernel, 1, "scale"), 3))
+
+print("--- SVM tuning, rbf kernel ---")
+for C in [0.1, 1, 10, 100]:
+    for gamma in ["scale", 0.01, 0.1]:
+        print("C =", C, "gamma =", gamma, "->", round(svm_cv_score("rbf", C, gamma), 3))
+
+        tuned_svc = Pipeline([
+    ("prep", make_scaled_preprocessor()),
+    ("model", SVC(kernel="rbf", C=100, gamma=0.1)),
+])
+tuned_svc.fit(X_train, y_cat_train)
+tuned_pred = tuned_svc.predict(X_test)
+print("Tuned SVM accuracy:", round(accuracy_score(y_cat_test, tuned_pred), 3))
+print(classification_report(y_cat_test, tuned_pred, zero_division=0))
+
+from sklearn.naive_bayes import MultinomialNB
+
+mnb = Pipeline([
+    ("prep", ColumnTransformer(
+        [("cats", OneHotEncoder(handle_unknown="ignore"), categorical)],
+        remainder="passthrough",
+    )),
+    ("model", MultinomialNB()),
+])
+mnb.fit(X_train, y_cat_train)
+mnb_pred = mnb.predict(X_test)
+print("Multinomial Naive Bayes accuracy:", round(accuracy_score(y_cat_test, mnb_pred), 3))
+print(classification_report(y_cat_test, mnb_pred, zero_division=0))
+dump(tuned_svc, "models/classification_svm.joblib")
+print("Saved the tuned SVM classifier to the models folder")
